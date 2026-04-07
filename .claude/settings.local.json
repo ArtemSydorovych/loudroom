@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(where pnpm:*)",
+      "Bash(cmd.exe /c \"where pnpm\")",
+      "Bash(cmd.exe /c \"where node\")",
+      "Bash(corepack enable:*)",
+      "Bash(corepack prepare:*)",
+      "Bash(pnpm --version)",
+      "Bash(npm exec:*)",
+      "Bash(npx pnpm:*)",
+      "Bash(npm install:*)",
+      "Bash(mv:*)"
+    ]
+  }
+}

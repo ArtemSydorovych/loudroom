@@ -1,92 +1,86 @@
 # Loudroom
 
-Real-time audience interaction platform for live sessions with polls, quizzes, and Q&A.
+Loudroom is a real-time audience interaction platform. A presenter creates a live session, shares a join code or QR code, and audience members join anonymously from their phones or laptops. During the session the presenter can run polls, quizzes with scored leaderboards, and moderate live Q&A — all updating in real time.
 
-## Prerequisites
+## Who is it for
 
-- [Node.js 22](https://nodejs.org/) (LTS)
-- [Docker](https://www.docker.com/) (for PostgreSQL)
+- **Presenters** — lecturers, speakers, teachers, or meeting hosts who want to engage their audience interactively. They sign up, create sessions, build polls and quizzes, and control the flow live.
+- **Audience members** — anyone who joins with a code and a nickname. No account needed. They vote on polls, answer quizzes, submit questions, and see results live.
 
-## Quick start
+## What it does
 
-```bash
-# 1. Clone and install
-git clone <repo-url> && cd loudroom
-npm install
+- **Live sessions** — a presenter creates a session and gets a unique join code and QR code to share. The session moves through waiting, active, and ended states.
+- **Polls** — multiple-choice questions pushed to all connected audience members in real time. Results update live as votes come in.
+- **Quizzes** — timed questions with a correct answer. Participants are scored and ranked on a leaderboard.
+- **Q&A** — audience members submit questions. The presenter approves and surfaces them. Questions can be upvoted.
+- **Leaderboard** — tracks quiz scores per participant across the session.
 
-# 2. Configure environment
-cp .env.example .env
-# Edit .env and set BETTER_AUTH_SECRET to a random string (min 32 characters)
+## Tech stack
 
-# 3. Start the database
-npm run docker:up
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, Vite 6, TypeScript, Zustand, TanStack React Query, Recharts, Framer Motion |
+| Backend | Fastify 5, Socket.io 4, TypeScript |
+| Auth | better-auth (presenters only, audience is anonymous) |
+| Database | PostgreSQL 16, Prisma 5 |
+| Tooling | Biome (linting + formatting), tsx (dev runner), concurrently |
 
-# 4. Push the Prisma schema to the database
-npm run db:push
+## Architecture
 
-# 5. Start development servers
-npm run dev
-```
-
-Backend runs on `http://localhost:3001`, frontend on `http://localhost:5173`.
-
-## Project structure
+The project is a single TypeScript repository with two apps and a shared types package.
 
 ```
 loudroom/
 ├── apps/
-│   ├── backend/              # Fastify + Socket.io API server
-│   │   ├── prisma/           # Prisma schema
+│   ├── backend/              # Fastify REST API + Socket.io server
+│   │   ├── prisma/           # Database schema
 │   │   └── src/
 │   │       ├── plugins/      # Fastify plugins (auth, cors, prisma)
 │   │       ├── routes/       # REST endpoints (sessions, polls)
-│   │       └── socket/       # Socket.io event handlers
-│   └── frontend/             # React SPA (Vite)
+│   │       └── socket/       # Real-time event handlers
+│   └── frontend/             # React SPA
 │       └── src/
-│           ├── api/          # Axios client
+│           ├── api/          # HTTP client (Axios)
 │           ├── audience/     # Audience views (join, poll, quiz, leaderboard)
-│           ├── components/   # Shared components
+│           ├── components/   # Shared components (auth guard, loading)
 │           ├── hooks/        # Custom hooks (auth, socket)
 │           ├── presenter/    # Presenter views (dashboard, session setup, live)
 │           ├── socket/       # Socket.io client
-│           └── store/        # Zustand stores
+│           └── store/        # Client state (Zustand)
 ├── packages/
-│   └── types/                # Shared TypeScript interfaces
+│   └── types/                # Shared TypeScript interfaces and Socket.io event maps
 ├── docs/
 │   └── adr/                  # Architecture Decision Records
-├── docker-compose.yml        # PostgreSQL 16
+├── docker-compose.yml        # PostgreSQL
 ├── tsconfig.base.json        # Shared TypeScript config
-├── biome.json                # Linting and formatting
-└── package.json              # All dependencies and scripts
+└── biome.json                # Linting and formatting config
 ```
 
-## Environment variables
+### How it fits together
 
-Copy `.env.example` to `.env` and fill in the values.
+1. The **frontend** communicates with the backend over REST (via Axios through a Vite proxy) for CRUD operations and over WebSockets (via Socket.io) for real-time events.
+2. The **backend** exposes REST routes for session and poll management, and a Socket.io server for live interactions (joining, voting, broadcasting results).
+3. **Presenter auth** is handled by better-auth running inside the Fastify process — no external identity provider needed.
+4. **Audience members** are anonymous. They join a session with a code and nickname, tracked as Participant records in the database.
+5. The **types package** defines shared interfaces for sessions, polls, participants, and the full Socket.io event contract. Both apps import these via relative paths.
 
-| Variable | Description | Default |
-|---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://loudroom:loudroom@localhost:5432/loudroom` |
-| `PORT` | Backend server port | `3001` |
-| `BETTER_AUTH_SECRET` | Auth signing secret (min 32 chars) | — |
-| `BETTER_AUTH_URL` | Backend URL for auth callbacks | `http://localhost:3001` |
-| `FRONTEND_URL` | Frontend URL for CORS | `http://localhost:5173` |
+## Data model
 
-## Scripts
+- **User** / **Session** / **Account** / **Verification** — better-auth managed tables for presenter accounts
+- **LoudroomSession** — a presenter's live session (title, join code, status)
+- **Poll** — a question attached to a session (multiple choice or quiz)
+- **PollOption** — answer choices for a poll
+- **Vote** — an audience member's vote on a poll option
+- **Participant** — an anonymous audience member in a session (nickname, score)
+- **Question** — a Q&A submission from an audience member
 
-| Script | Description |
-|---|---|
-| `npm run dev` | Start backend and frontend in parallel |
-| `npm run dev:backend` | Start backend only (tsx watch) |
-| `npm run dev:frontend` | Start frontend only (Vite) |
-| `npm run build` | Build backend and frontend |
-| `npm run build:backend` | Build backend only |
-| `npm run build:frontend` | Build frontend only |
-| `npm run typecheck` | TypeScript checks for both apps |
-| `npm run lint` | Lint with Biome |
-| `npm run format` | Format with Biome |
-| `npm run db:push` | Push Prisma schema to database |
-| `npm run db:migrate` | Run Prisma migrations |
-| `npm run db:studio` | Open Prisma Studio GUI |
-| `npm run docker:up` | Start PostgreSQL container |
-| `npm run docker:down` | Stop PostgreSQL container |
+## Getting started
+
+See [HOW-TO-RUN.md](HOW-TO-RUN.md) for prerequisites, setup instructions, environment variables, and available scripts.
+
+## Architecture decisions
+
+Significant technical decisions are documented as ADRs in [`docs/adr/`](docs/adr/):
+
+- [ADR-001: Repository structure](docs/adr/ADR-001-monorepo-structure.md)
+- [ADR-002: Authentication strategy](docs/adr/ADR-002-authentication-strategy.md)
