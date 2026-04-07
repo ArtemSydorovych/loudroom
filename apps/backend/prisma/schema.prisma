@@ -1,0 +1,169 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ── better-auth tables ──────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions         Session[]
+  accounts         Account[]
+  loudroomSessions LoudroomSession[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
+// ── App domain models ───────────────────────────────────────────────
+
+enum SessionStatus {
+  WAITING
+  ACTIVE
+  ENDED
+}
+
+enum PollType {
+  MULTIPLE_CHOICE
+  QUIZ
+}
+
+model LoudroomSession {
+  id        String        @id @default(uuid())
+  userId    String
+  joinCode  String        @unique
+  title     String
+  status    SessionStatus @default(WAITING)
+  createdAt DateTime      @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  polls        Poll[]
+  participants Participant[]
+  questions    Question[]
+
+  @@map("loudroom_session")
+}
+
+model Poll {
+  id              String   @id @default(uuid())
+  sessionId       String
+  question        String
+  type            PollType
+  orderIndex      Int
+  timeLimitSeconds Int?
+  correctOptionId String?
+  createdAt       DateTime @default(now())
+
+  session LoudroomSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  options PollOption[]
+  votes   Vote[]
+
+  @@map("poll")
+}
+
+model PollOption {
+  id         String @id @default(uuid())
+  pollId     String
+  text       String
+  orderIndex Int
+
+  poll  Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes Vote[]
+
+  @@map("poll_option")
+}
+
+model Vote {
+  id            String   @id @default(uuid())
+  pollId        String
+  optionId      String
+  participantId String
+  submittedAt   DateTime @default(now())
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@map("vote")
+}
+
+model Participant {
+  id        String   @id @default(uuid())
+  sessionId String
+  nickname  String
+  score     Int      @default(0)
+  joinedAt  DateTime @default(now())
+
+  session LoudroomSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("participant")
+}
+
+model Question {
+  id            String   @id @default(uuid())
+  sessionId     String
+  participantId String
+  text          String
+  isApproved    Boolean  @default(false)
+  upvotes       Int      @default(0)
+  submittedAt   DateTime @default(now())
+
+  session LoudroomSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("question")
+}
