@@ -66,9 +66,22 @@ Copy `.env.example` to `.env` and fill in the values.
 |---|---|---|
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://loudroom:loudroom@localhost:5432/loudroom` |
 | `PORT` | Backend server port | `3001` |
+| `NODE_ENV` | Runtime mode (`development`, `test`, `production`) | `development` |
+| `LOG_LEVEL` | Pino log level (`fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`) | `info` |
 | `BETTER_AUTH_SECRET` | Auth signing secret (min 32 chars) | — |
 | `BETTER_AUTH_URL` | Backend URL for auth callbacks | `http://localhost:3001` |
 | `FRONTEND_URL` | Frontend URL for CORS | `http://localhost:5173` |
+
+Generate a secret with `openssl rand -base64 32` (or any 32+ char random string).
+
+## Verify the backend is up
+
+Once `npm run dev` is running:
+
+```bash
+curl http://localhost:3001/health         # liveness
+curl http://localhost:3001/health/ready   # checks DB connectivity
+```
 
 ## Scripts
 
