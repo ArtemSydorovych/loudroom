@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import { config } from "./config.js";
+import authPlugin from "./plugins/auth.js";
 import corsPlugin from "./plugins/cors.js";
 import prismaPlugin from "./plugins/prisma.js";
 import healthRoutes from "./routes/health.js";
@@ -21,6 +22,7 @@ export async function buildApp() {
 
   await app.register(prismaPlugin);
   await app.register(corsPlugin);
+  await app.register(authPlugin);
   await app.register(healthRoutes);
 
   return app;
