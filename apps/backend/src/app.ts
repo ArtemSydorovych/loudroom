@@ -4,6 +4,8 @@ import authPlugin from "./plugins/auth.js";
 import corsPlugin from "./plugins/cors.js";
 import prismaPlugin from "./plugins/prisma.js";
 import healthRoutes from "./routes/health.js";
+import pollsRoutes from "./routes/polls.js";
+import sessionsRoutes from "./routes/sessions.js";
 
 export async function buildApp() {
   const app = Fastify({
@@ -24,6 +26,8 @@ export async function buildApp() {
   await app.register(corsPlugin);
   await app.register(authPlugin);
   await app.register(healthRoutes);
+  await app.register(sessionsRoutes, { prefix: "/api" });
+  await app.register(pollsRoutes, { prefix: "/api" });
 
   return app;
 }

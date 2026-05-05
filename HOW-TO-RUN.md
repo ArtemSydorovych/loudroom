@@ -109,6 +109,25 @@ curl -X POST http://localhost:3001/api/auth/sign-out -b cookies.txt
 
 Protect a route in your own handler by calling `app.requireAuth(req, reply)` — it returns `{ user, session }` or sends `401`.
 
+## REST endpoints
+
+All routes live under `/api`.
+
+**Sessions** (presenter, requires auth)
+- `GET    /api/sessions` — list the caller's sessions
+- `POST   /api/sessions` — create one (`{ title }`); a unique 6-char join code is generated
+- `GET    /api/sessions/:id` — fetch own session
+- `PATCH  /api/sessions/:id/status` — transition (`WAITING` → `ACTIVE` → `ENDED`)
+
+**Sessions** (public, no auth)
+- `GET    /api/sessions/by-code/:code` — audience lookup; case-insensitive
+- `POST   /api/sessions/:id/participants` — register an anonymous `Participant` (`{ nickname }`); rejects if session is `ENDED`
+
+**Polls** (presenter, requires auth)
+- `GET    /api/sessions/:sessionId/polls` — list polls in a session
+- `POST   /api/sessions/:sessionId/polls` — create a poll with options in a single transaction
+- `DELETE /api/polls/:id` — delete a poll the caller owns
+
 ## Scripts
 
 | Script | Description |
