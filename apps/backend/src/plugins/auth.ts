@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
 import { type AuthSession, type AuthUser, auth } from "../lib/auth.js";
+import { toWebHeaders } from "../lib/http.js";
 
 type AuthContext = { user: AuthUser; session: AuthSession };
 
@@ -14,21 +15,8 @@ declare module "fastify" {
   }
 }
 
-function toWebHeaders(req: FastifyRequest): Headers {
-  const headers = new Headers();
-  for (const [key, value] of Object.entries(req.headers)) {
-    if (value === undefined) continue;
-    if (Array.isArray(value)) {
-      for (const v of value) headers.append(key, v);
-    } else {
-      headers.set(key, String(value));
-    }
-  }
-  return headers;
-}
-
 async function resolveSession(req: FastifyRequest): Promise<AuthContext | null> {
-  const result = await auth.api.getSession({ headers: toWebHeaders(req) });
+  const result = await auth.api.getSession({ headers: toWebHeaders(req.headers) });
   if (!result) return null;
   return { user: result.user, session: result.session };
 }
@@ -55,7 +43,7 @@ const authPlugin: FastifyPluginAsync = async (app: FastifyInstance) => {
       const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
       const init: RequestInit = {
         method: req.method,
-        headers: toWebHeaders(req),
+        headers: toWebHeaders(req.headers),
       };
       if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
         init.body = JSON.stringify(req.body);
