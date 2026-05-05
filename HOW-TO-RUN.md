@@ -83,6 +83,32 @@ curl http://localhost:3001/health         # liveness
 curl http://localhost:3001/health/ready   # checks DB connectivity
 ```
 
+## Auth endpoints (presenter)
+
+All auth routes are exposed under `/api/auth/*` by better-auth. The presenter flow uses email + password.
+
+```bash
+# Sign up
+curl -X POST http://localhost:3001/api/auth/sign-up/email \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{"email":"you@example.com","password":"yourpassword","name":"You"}'
+
+# Sign in
+curl -X POST http://localhost:3001/api/auth/sign-in/email \
+  -H "Content-Type: application/json" \
+  -c cookies.txt -b cookies.txt \
+  -d '{"email":"you@example.com","password":"yourpassword"}'
+
+# Current session
+curl http://localhost:3001/api/me -b cookies.txt
+
+# Sign out
+curl -X POST http://localhost:3001/api/auth/sign-out -b cookies.txt
+```
+
+Protect a route in your own handler by calling `app.requireAuth(req, reply)` — it returns `{ user, session }` or sends `401`.
+
 ## Scripts
 
 | Script | Description |
