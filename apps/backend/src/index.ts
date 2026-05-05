@@ -1,5 +1,6 @@
 import { buildApp } from "./app.js";
 import { config } from "./config.js";
+import { createHub } from "./socket/hub.js";
 
 async function main() {
   const app = await buildApp();
@@ -20,6 +21,10 @@ async function main() {
 
   try {
     await app.listen({ host: "0.0.0.0", port: config.PORT });
+    const hub = createHub(app.server, { prisma: app.prisma, log: app.log });
+    app.addHook("onClose", async () => {
+      await hub.close();
+    });
   } catch (err) {
     app.log.error({ err }, "failed to start server");
     process.exit(1);

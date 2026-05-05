@@ -22,17 +22,18 @@ let authedRequireAuth = true;
 
 vi.mock("../plugins/auth.js", async () => {
   const fp = (await import("fastify-plugin")).default;
+  const requireAuth = (async (_req: unknown, reply: { code: (n: number) => { send: (b: unknown) => void } }) => {
+    if (!authedRequireAuth) {
+      reply.code(401).send({ error: "unauthorized" });
+      return undefined;
+    }
+    return { user: { id: PRESENTER_ID }, session: { id: "sess-1" } };
+  }) as never;
   return {
     default: fp(
       async (app) => {
         app.decorateRequest("auth", null);
-        app.decorate("requireAuth", async (_req: unknown, reply: { code: (n: number) => { send: (b: unknown) => void } }) => {
-          if (!authedRequireAuth) {
-            reply.code(401).send({ error: "unauthorized" });
-            return undefined;
-          }
-          return { user: { id: PRESENTER_ID }, session: { id: "sess-1" } };
-        });
+        app.decorate("requireAuth", requireAuth);
       },
       { name: "auth" },
     ),

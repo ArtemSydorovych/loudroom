@@ -128,6 +128,22 @@ All routes live under `/api`.
 - `POST   /api/sessions/:sessionId/polls` — create a poll with options in a single transaction
 - `DELETE /api/polls/:id` — delete a poll the caller owns
 
+## Socket.io events
+
+The realtime hub is attached to the same HTTP port as the REST API at `path: /socket.io`. CORS matches `FRONTEND_URL` with credentials enabled. Each session has its own room (`session:<id>`).
+
+Client → server: `joinSession`, `vote`, `submitQuestion`, `startPoll`, `endPoll`, `approveQuestion`.
+Server → client: `sessionJoined`, `participantCountUpdate`, `pollStarted`, `voteUpdate`, `pollEnded`, `questionReceived`, `error`.
+
+A typical audience flow:
+
+1. Client calls `POST /api/sessions/by-code/:code` then `POST /api/sessions/:id/participants` to obtain a `participantId`.
+2. Client connects to Socket.io and emits `joinSession` with `{ sessionId, participantId, nickname }`.
+3. Server replies with `sessionJoined` and broadcasts `participantCountUpdate` to the room.
+4. Client emits `vote` / `submitQuestion`; server broadcasts `voteUpdate` / `questionReceived` to everyone in the same room.
+
+The full event contract lives in `packages/types/src/socket.ts`.
+
 ## Scripts
 
 | Script | Description |

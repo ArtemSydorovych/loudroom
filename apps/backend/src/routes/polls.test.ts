@@ -16,13 +16,15 @@ const PRESENTER_ID = "user-1";
 
 vi.mock("../plugins/auth.js", async () => {
   const fp = (await import("fastify-plugin")).default;
+  const requireAuth = (async () => ({
+    user: { id: PRESENTER_ID },
+    session: { id: "sess-1" },
+  })) as never;
   return {
     default: fp(
       async (app) => {
         app.decorateRequest("auth", null);
-        app.decorate("requireAuth", async () => {
-          return { user: { id: PRESENTER_ID }, session: { id: "sess-1" } };
-        });
+        app.decorate("requireAuth", requireAuth);
       },
       { name: "auth" },
     ),
