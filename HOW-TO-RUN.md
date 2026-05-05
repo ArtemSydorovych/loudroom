@@ -120,6 +120,8 @@ Protect a route in your own handler by calling `app.requireAuth(req, reply)` —
 | `npm run build:backend` | Build backend only |
 | `npm run build:frontend` | Build frontend only |
 | `npm run typecheck` | TypeScript checks for both apps |
+| `npm run test` | Run vitest (unit + integration) once |
+| `npm run test:watch` | Run vitest in watch mode |
 | `npm run lint` | Lint with Biome |
 | `npm run format` | Format with Biome |
 | `npm run db:push` | Push Prisma schema to database |
