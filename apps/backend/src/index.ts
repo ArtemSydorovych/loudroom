@@ -20,11 +20,11 @@ async function main() {
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
   try {
-    await app.listen({ host: "0.0.0.0", port: config.PORT });
     const hub = createHub(app.server, { prisma: app.prisma, log: app.log });
     app.addHook("onClose", async () => {
       await hub.close();
     });
+    await app.listen({ host: "0.0.0.0", port: config.PORT });
   } catch (err) {
     app.log.error({ err }, "failed to start server");
     process.exit(1);
